@@ -16,10 +16,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: windowScene)
         self.window = window
-//        appCoordinator = AppCoordiator(window: window)
-//        appCoordinator?.start()
-        window.rootViewController = AdvertisementsControllerView()
-        window.makeKeyAndVisible()
+        appCoordinator = AppCoordiator(window: window)
+        appCoordinator?.start()
     }
 }
 

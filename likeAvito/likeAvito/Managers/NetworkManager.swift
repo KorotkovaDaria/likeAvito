@@ -21,7 +21,7 @@ protocol NetworkManagerProtocol {
     typealias AdvertisementDetailResult = (Result <AdvertisementDetail, AdvertisementsError>) -> Void
     
     func getAdvertisements(completed: @escaping AdvertisementsResult)
-    func getAdvertisementDetail(item id: Int?, completed: @escaping AdvertisementDetailResult)
+    func getAdvertisementDetail(item id: String?, completed: @escaping AdvertisementDetailResult)
     func downloadImage(from urlString: String, completed: @escaping (UIImage?) -> Void)
 }
 
@@ -66,7 +66,7 @@ final class NetworkManager: NetworkManagerProtocol {
         task.resume()
     }
     
-    func getAdvertisementDetail(item id: Int?, completed: @escaping AdvertisementDetailResult) {
+    func getAdvertisementDetail(item id: String?, completed: @escaping AdvertisementDetailResult) {
         guard let idItem = id else { return }
         let endpoint = "\(urlString.baseDetailURL)\(idItem)\(urlString.endpointForDetailURL)"
         

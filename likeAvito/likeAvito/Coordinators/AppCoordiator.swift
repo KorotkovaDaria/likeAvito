@@ -17,10 +17,9 @@ final class AppCoordiator: Coordinator {
         self.window = window
     }
     func start() {
-        let itemsCoordinator = ItemsCoordinator(parentCoordinator: self, navigationController: navigationController)
+        let itemsCoordinator = AdCoordinator(parentCoordinator: self, navigationController: navigationController)
         childCoordinators.append(itemsCoordinator)
         itemsCoordinator.start()
-        
         window.rootViewController = navigationController
         window.makeKeyAndVisible()
     }
