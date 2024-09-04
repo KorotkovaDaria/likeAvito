@@ -6,43 +6,63 @@
 //
 
 import UIKit
+protocol AdvertisementsViewProtocol: AnyObject {
+    func showAdvertisements(_ advertisements: [Advertisement])
+    func showError(_ message: String)
+    func showDetailAdvertisements(_ ad: AdvertisementDetail)
+}
 
-class AdvertisementsControllerView: UIViewController {
-
+class AdvertisementsControllerView: UIViewController, AdvertisementsViewProtocol {
+    
+    var presenter: AdvertisementsPresenterProtocol
+    var networkManager = NetworkManager.shared
     
     private lazy var activityIndicator = UIActivityIndicatorView(style: .large)
     private lazy var colletionView = UICollectionView(frame: view.bounds, collectionViewLayout: AdvertisementsControllerView.createTwoColumnFlowLayout(in: view))
     private var advertisementsRes: [Advertisement] = []
     
+    init(presenter: AdvertisementsPresenterProtocol) {
+        self.presenter = presenter
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        presenter.getAdvertisements()
     }
     
     private func setupView() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = UIColor(named: "backgroung")
         setupCollectionView()
         setupActivityIndicator()
         setupNavigationBar()
-        fetchData()
     }
-
-    private func fetchData() {
-        NetworkManager.shared.getAdvertisements { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let advertisements):
-                self.advertisementsRes = advertisements.advertisements
-                print(self.advertisementsRes)
-            case .failure(let error):
-                print(error)
-            }
+    
+    func showAdvertisements(_ advertisements: [Advertisement]) {
+        self.advertisementsRes = advertisements
+        DispatchQueue.main.async {
+            self.colletionView.reloadData()
         }
     }
+    
+    func showError(_ message: String) {
+        //alert
+    }
+    
+    func showDetailAdvertisements(_ ad: AdvertisementDetail) {
+        let detailView = AdvertisementDetailViewController(advertisement: ad)
+        navigationController?.pushViewController(detailView, animated: true)
+    }
+    
     private func setupCollectionView() {
         view.addSubview(colletionView)
         colletionView.translatesAutoresizingMaskIntoConstraints = false
-
+        
         NSLayoutConstraint.activate([
             colletionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             colletionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
@@ -54,57 +74,59 @@ class AdvertisementsControllerView: UIViewController {
         colletionView.dataSource = self
         colletionView.alwaysBounceVertical = true
     }
-
+    
     private func setupActivityIndicator() {
         view.addSubview(activityIndicator)
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-
+        
         NSLayoutConstraint.activate([
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
-
+    
     private func setupNavigationBar() {
         navigationItem.title = "searchControllerTitle"
         navigationItem.backButtonTitle = "backButtonTitle"
         navigationItem.hidesSearchBarWhenScrolling = false
     }
-
+    
     static func createTwoColumnFlowLayout(in view: UIView) -> UICollectionViewFlowLayout {
-        let width                       = view.bounds.width
-        let padding: CGFloat            = 8
-        let minimumItemSpacing: CGFloat = 4
-        let numberOfColumns             = 2
+        let width = view.bounds.width
+        let padding: CGFloat = 16
+        let minimumItemSpacing: CGFloat = 10
+        let numberOfColumns = 2
         
-        let availableWidth = width - (padding * CGFloat(numberOfColumns + 1)) - (minimumItemSpacing * CGFloat(numberOfColumns - 1))
-        let itemWidth      = availableWidth / CGFloat(numberOfColumns)
+        let totalHorizontalPadding = padding * 2
+        let totalSpacing = minimumItemSpacing * CGFloat(numberOfColumns - 1)
+        let availableWidth = width - totalHorizontalPadding - totalSpacing
+        let itemWidth = availableWidth / CGFloat(numberOfColumns)
         
-        let flowLayout                     = UICollectionViewFlowLayout()
-        flowLayout.sectionInset            = UIEdgeInsets(top: padding, left: padding, bottom: padding, right: padding)
+        let itemHeight: CGFloat = 270
+        
+        let flowLayout = UICollectionViewFlowLayout()
+        flowLayout.sectionInset = UIEdgeInsets(top: padding, left: padding, bottom: padding, right: padding)
         flowLayout.minimumInteritemSpacing = minimumItemSpacing
-        flowLayout.minimumLineSpacing      = minimumItemSpacing
-        flowLayout.itemSize                = CGSize(width: itemWidth, height: itemWidth + 30)
+        flowLayout.minimumLineSpacing = minimumItemSpacing
+        flowLayout.itemSize = CGSize(width: itemWidth, height: itemHeight)
         
         return flowLayout
     }
 }
 
-extension AdvertisementsControllerView: UICollectionViewDelegate {
-    
-    
-}
-
-extension AdvertisementsControllerView: UICollectionViewDataSource {
+extension AdvertisementsControllerView: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return advertisementsRes.count
     }
-
+    
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: AdvertisementsCollectionViewCell.reuseIdentifier, for: indexPath) as! AdvertisementsCollectionViewCell
         cell.configureCell(advertisement: advertisementsRes[indexPath.item])
-        cell.layer.borderColor = UIColor.black.cgColor
-        cell.layer.borderWidth = 3
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let selectedAd = advertisementsRes[indexPath.item]
+        presenter.goToItemDetails(selectedAdIdx: selectedAd.id)
     }
 }
